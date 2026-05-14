@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Expenses — Yang & Liesl</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&family=Just+Me+Again+Down+Here&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --sand:       #EDE8DF;
+      --sand-light: #F5F1EB;
+      --sand-mid:   #E2DAD0;
+      --sand-dark:  #C8BFB3;
+      --ink:        #2B5F78;
+      --ink-mid:    #4A7F96;
+      --ink-light:  #8AACBA;
+      --ink-ghost:  rgba(43,95,120,0.12);
+      --white:      #FDFAF6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%;
+      font-family: 'Nunito', sans-serif;
+      background: var(--sand);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Views ── */
+    .view { display: none; flex: 1; flex-direction: column; padding-bottom: 90px; overflow-y: auto; }
+    .view.active { display: flex; }
+
+    /* ── Nav ── */
+    .nav {
+      padding: 52px 28px 14px;
+      background: var(--sand);
+      flex-shrink: 0;
+    }
+    .nav h1 {
+      font-family: 'Just Me Again Down Here', cursive;
+      font-size: 52px;
+      font-weight: 400;
+      letter-spacing: 1px;
+      color: var(--ink);
+      line-height: 1.1;
+    }
+    .nav p {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-light);
+      margin-top: 2px;
+    }
+
+    /* ── Who toggle ── */
+    .who-wrap { padding: 20px 28px 0; }
+    .who-toggle {
+      display: flex;
+      background: var(--sand-mid);
+      border-radius: 16px;
+      padding: 4px;
+      position: relative;
+    }
+    .who-toggle input { display: none; }
+    .who-toggle label {
+      flex: 1;
+      text-align: center;
+      padding: 10px 8px;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--ink-light);
+      cursor: pointer;
+      border-radius: 12px;
+      position: relative;
+      z-index: 1;
+      transition: color 0.2s;
+      user-select: none;
+      letter-spacing: 0.3px;
+    }
+    .who-toggle input:checked + label { color: var(--ink); }
+    .who-pill {
+      position: absolute;
+      top: 4px; bottom: 4px; left: 4px;
+      width: calc(50% - 4px);
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: transform 0.24s cubic-bezier(0.34, 1.4, 0.64, 1);
+      pointer-events: none;
+    }
+    #who-liesl:checked ~ .who-pill { transform: translateX(100%); }
+
+    /* ── Amount ── */
+    .amount-section {
+      padding: 32px 28px 20px;
+      text-align: center;
+    }
+    .amount-label {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 8px;
+    }
+    .amount-display {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 6px;
+    }
+    .amount-currency {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 28px;
+      font-weight: 400;
+      color: var(--ink-light);
+      padding-bottom: 8px;
+    }
+    .amount-number {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 84px;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1;
+      letter-spacing: -2px;
+      min-width: 30px;
+      transition: color 0.15s;
+    }
+    .amount-number.empty { color: var(--sand-dark); }
+
+    /* ── Numpad ── */
+    .numpad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 0 28px 8px;
+    }
+    .nk {
+      height: 68px;
+      background: var(--white);
+      border: none;
+      border-radius: 16px;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: #555555;
+      cursor: pointer;
+      transition: background 0.12s, transform 0.08s;
+      -webkit-appearance: none;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .nk:active { background: var(--sand-mid); transform: scale(0.95); }
+    .nk.del { font-size: 20px; color: #555555; }
+    .nk.zero { grid-column: 1; }
+
+    /* ── Section ── */
+    .section { padding: 24px 28px 0; }
+    .section-label {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 12px;
+    }
+
+    /* ── Category strip ── */
+    .cat-strip {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      margin: 0 -28px;
+      padding: 0 28px 6px;
+    }
+    .cat-strip::-webkit-scrollbar { display: none; }
+    .cat-strip input { display: none; }
+    .cat-chip {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 18px;
+      border-radius: 50px;
+      background: var(--sand-light);
+      font-family: 'Fredoka', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--ink-mid);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, transform 0.1s;
+      user-select: none;
+      letter-spacing: 0.2px;
+    }
+    .cat-chip:active { transform: scale(0.96); }
+    .cat-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--sand-dark);
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .cat-strip input:checked + .cat-chip {
+      background: var(--ink);
+      color: var(--white);
+    }
+    .cat-strip input:checked + .cat-chip .cat-dot { background: var(--ink-light); }
+
+    /* ── Details card ── */
+    .detail-card {
+      background: var(--sand-light);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .detail-row {
+      display: flex;
+      align-items: center;
+      padding: 14px 20px;
+      min-height: 52px;
+      position: relative;
+    }
+    .detail-row + .detail-row::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20px; right: 20px;
+      height: 1px;
+      background: var(--sand-mid);
+    }
+    .detail-row.col {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      padding-bottom: 16px;
+    }
+    .detail-lbl {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--ink);
+      min-width: 80px;
+      letter-spacing: 0.2px;
+    }
+    input[type="date"].date-inp {
+      border: none;
+      background: transparent;
+      font-family: 'Nunito', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink-mid);
+      outline: none;
+      text-align: right;
+      -webkit-appearance: none;
+      flex: 1;
+    }
+
+    /* ── Payment pills ── */
+    .pay-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .pay-chips input { display: none; }
+    .pay-chip {
+      padding: 7px 16px;
+      border-radius: 50px;
+      background: var(--sand-mid);
+      font-family: 'Fredoka', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--ink-mid);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      user-select: none;
+      letter-spacing: 0.2px;
+    }
+    .pay-chips input:checked + .pay-chip { background: var(--ink); color: var(--white); }
+
+    /* ── Note ── */
+    .note-ta {
+      width: 100%;
+      border: none;
+      background: var(--sand-light);
+      border-radius: 20px;
+      padding: 16px 20px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink);
+      resize: none;
+      height: 80px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .note-ta::placeholder { color: var(--sand-dark); }
+
+    /* ── CTA ── */
+    .cta-wrap { padding: 24px 28px 0; }
+    .cta {
+      width: 100%;
+      padding: 18px;
+      background: var(--ink);
+      color: var(--white);
+      border: none;
+      border-radius: 20px;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: transform 0.12s, opacity 0.15s;
+      -webkit-appearance: none;
+    }
+    .cta:active { transform: scale(0.97); opacity: 0.88; }
+    .cta:disabled { opacity: 0.35; }
+
+    /* ── Tab bar ── */
+    .tab-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--sand);
+      border-top: 1.5px solid var(--sand-mid);
+      display: flex;
+      justify-content: center;
+      padding: 10px 0 28px;
+      z-index: 50;
+    }
+    .tab-bar-inner { display: flex; max-width: 430px; width: 100%; }
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 0;
+      border: none;
+      background: none;
+      cursor: pointer;
+    }
+    .tab-ico-wrap {
+      width: 36px; height: 36px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .tab-btn.active .tab-ico-wrap { background: var(--ink-ghost); }
+    .tab-ico {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 18px;
+      color: var(--sand-dark);
+      transition: color 0.15s;
+    }
+    .tab-btn.active .tab-ico { color: var(--ink); }
+    .tab-lbl {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--sand-dark);
+      letter-spacing: 0.2px;
+      transition: color 0.15s;
+    }
+    .tab-btn.active .tab-lbl { color: var(--ink); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 110px; left: 50%;
+      transform: translateX(-50%) translateY(10px); opacity: 0;
+      background: var(--ink);
+      color: var(--white);
+      padding: 12px 24px; border-radius: 50px;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 17px; font-weight: 500; letter-spacing: 0.3px;
+      z-index: 999; white-space: nowrap; pointer-events: none;
+      transition: opacity 0.2s, transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ────────────── DASHBOARD ────────────── */
+    .dash-wrap { padding: 24px 28px 40px; }
+    .dash-month {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-light);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 16px;
+    }
+    .stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 32px; }
+    .stat-card {
+      background: var(--sand-light);
+      border-radius: 20px;
+      padding: 16px 12px;
+      text-align: center;
+    }
+    .stat-lbl {
+      font-size: 11px; font-weight: 700;
+      color: var(--ink-light);
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .stat-val {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 19px; font-weight: 600;
+      color: var(--ink); letter-spacing: 0.2px;
+      margin-top: 5px; line-height: 1.1;
+    }
+    .stat-val.liesl { color: var(--ink-mid); }
+
+    .dash-block { margin-bottom: 32px; }
+    .dash-h2 {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 26px; font-weight: 600;
+      color: var(--ink); letter-spacing: 0.3px;
+      margin-bottom: 14px;
+    }
+    .dash-panel { background: var(--sand-light); border-radius: 20px; padding: 18px 20px; }
+
+    .bar-list { display: flex; flex-direction: column; gap: 15px; }
+    .bar-item { display: flex; flex-direction: column; gap: 6px; }
+    .bar-top { display: flex; justify-content: space-between; align-items: baseline; }
+    .bar-name {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 17px; font-weight: 500;
+      color: var(--ink); letter-spacing: 0.2px;
+    }
+    .bar-amt {
+      font-size: 14px; font-weight: 700;
+      color: var(--ink-mid); letter-spacing: -0.2px;
+    }
+    .bar-track { height: 6px; background: var(--sand-mid); border-radius: 99px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--ink); border-radius: 99px; transition: width 0.55s cubic-bezier(0.25,1,0.5,1); }
+
+    .entry-list { display: flex; flex-direction: column; }
+    .entry-row {
+      display: flex; align-items: center;
+      padding: 12px 0; gap: 14px; position: relative;
+    }
+    .entry-row + .entry-row::before {
+      content: ''; position: absolute; top: 0; left: 46px; right: 0;
+      height: 1px; background: var(--sand-mid);
+    }
+    .entry-dot {
+      width: 36px; height: 36px;
+      background: var(--sand-mid);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .entry-dot-inner {
+      width: 10px; height: 10px;
+      background: var(--ink-light);
+      border-radius: 50%;
+    }
+    .entry-body { flex: 1; min-width: 0; }
+    .entry-cat {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 17px; font-weight: 500;
+      color: var(--ink); letter-spacing: 0.2px;
+    }
+    .entry-sub { font-size: 13px; font-weight: 500; color: var(--ink-light); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .entry-amt {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 17px; font-weight: 600;
+      color: var(--ink); letter-spacing: 0.2px;
+    }
+
+    .refresh-btn {
+      width: 100%; padding: 15px;
+      background: var(--sand-light);
+      border: none; border-radius: 20px;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 18px; font-weight: 500;
+      color: var(--ink-mid); cursor: pointer;
+      letter-spacing: 0.3px; margin-top: 4px;
+      transition: background 0.15s;
+    }
+    .refresh-btn:active { background: var(--sand-mid); }
+
+    .dash-empty { text-align: center; padding: 48px 0; color: var(--ink-light); font-family: 'Fredoka', sans-serif; font-size: 18px; }
+    .dash-load  { text-align: center; padding: 60px 0; color: var(--ink-light); font-family: 'Fredoka', sans-serif; font-size: 18px; }
+    .err-box {
+      background: #fde8e8; border-radius: 16px;
+      padding: 16px 20px; font-size: 14px; font-weight: 600;
+      color: #8b2020; line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══════════ SHARED HEADER ══════════ -->
+  <div class="nav">
+    <h1 id="main-title">Expense</h1>
+    <p>Yang &amp; Liesl</p>
+  </div>
+
+  <!-- ══════════ ADD EXPENSE ══════════ -->
+  <div class="view active" id="v-add">
+
+    <!-- Who -->
+    <div class="who-wrap">
+      <div class="who-toggle">
+        <input type="radio" name="who" id="who-yang" value="Yang" checked />
+        <label for="who-yang">Yang</label>
+        <input type="radio" name="who" id="who-liesl" value="Liesl" />
+        <label for="who-liesl">Liesl</label>
+        <div class="who-pill"></div>
+      </div>
+    </div>
+
+    <!-- Amount -->
+    <div class="amount-section">
+      <div class="amount-label">Amount</div>
+      <div class="amount-display">
+        <span class="amount-currency">RM</span>
+        <span class="amount-number empty" id="amtNum">0</span>
+      </div>
+    </div>
+
+    <!-- Numpad -->
+    <div class="numpad">
+      <button class="nk" onclick="tap('1')">1</button>
+      <button class="nk" onclick="tap('2')">2</button>
+      <button class="nk" onclick="tap('3')">3</button>
+      <button class="nk" onclick="tap('4')">4</button>
+      <button class="nk" onclick="tap('5')">5</button>
+      <button class="nk" onclick="tap('6')">6</button>
+      <button class="nk" onclick="tap('7')">7</button>
+      <button class="nk" onclick="tap('8')">8</button>
+      <button class="nk" onclick="tap('9')">9</button>
+      <button class="nk" onclick="tap('.')">.</button>
+      <button class="nk zero" onclick="tap('0')">0</button>
+      <button class="nk del" onclick="tap('del')">&#x232B;</button>
+    </div>
+
+    <!-- Category -->
+    <div class="section">
+      <div class="section-label">Category</div>
+      <div class="cat-strip">
+        <input type="radio" name="cat" id="c-gr" value="Groceries" checked /><label class="cat-chip" for="c-gr"><span class="cat-dot"></span>Groceries</label>
+        <input type="radio" name="cat" id="c-fd" value="Food" /><label class="cat-chip" for="c-fd"><span class="cat-dot"></span>Food</label>
+        <input type="radio" name="cat" id="c-gf" value="Grabfood" /><label class="cat-chip" for="c-gf"><span class="cat-dot"></span>Grabfood</label>
+        <input type="radio" name="cat" id="c-pt" value="Petrol" /><label class="cat-chip" for="c-pt"><span class="cat-dot"></span>Petrol</label>
+        <input type="radio" name="cat" id="c-cr" value="Car" /><label class="cat-chip" for="c-cr"><span class="cat-dot"></span>Car</label>
+        <input type="radio" name="cat" id="c-bl" value="Bills" /><label class="cat-chip" for="c-bl"><span class="cat-dot"></span>Bills</label>
+        <input type="radio" name="cat" id="c-sh" value="Shopping" /><label class="cat-chip" for="c-sh"><span class="cat-dot"></span>Shopping</label>
+        <input type="radio" name="cat" id="c-en" value="Entertainment" /><label class="cat-chip" for="c-en"><span class="cat-dot"></span>Entertainment</label>
+        <input type="radio" name="cat" id="c-ms" value="Misc" /><label class="cat-chip" for="c-ms"><span class="cat-dot"></span>Misc</label>
+      </div>
+    </div>
+
+    <!-- Details -->
+    <div class="section" style="padding-top:22px;">
+      <div class="section-label">Details</div>
+      <div class="detail-card">
+        <div class="detail-row">
+          <span class="detail-lbl">Date</span>
+          <input type="date" class="date-inp" id="date" />
+        </div>
+        <div class="detail-row col">
+          <span class="detail-lbl">Payment</span>
+          <div class="pay-chips">
+            <input type="radio" name="pay" id="p-ca" value="Cash" /><label class="pay-chip" for="p-ca">Cash</label>
+            <input type="radio" name="pay" id="p-cc" value="Credit Card" checked /><label class="pay-chip" for="p-cc">Credit Card</label>
+            <input type="radio" name="pay" id="p-db" value="Debit Card" /><label class="pay-chip" for="p-db">Debit</label>
+            <input type="radio" name="pay" id="p-ew" value="E-Wallet" /><label class="pay-chip" for="p-ew">E-Wallet</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Note -->
+    <div class="section" style="padding-top:18px;">
+      <div class="section-label">Note</div>
+      <textarea class="note-ta" id="note" placeholder="Optional — e.g. AEON groceries, dinner at Bangsar"></textarea>
+    </div>
+
+    <div class="cta-wrap">
+      <button class="cta" id="addBtn" onclick="submitExpense()">Add Expense</button>
+    </div>
+  </div>
+
+  <!-- ══════════ DASHBOARD ══════════ -->
+  <div class="view" id="v-dash">
+    <div class="dash-wrap">
+      <div id="dashContent"><div class="dash-load">Loading...</div></div>
+      <button class="refresh-btn" onclick="loadDashboard()">Refresh</button>
+    </div>
+  </div>
+
+  <!-- ══════════ TAB BAR ══════════ -->
+  <nav class="tab-bar">
+    <div class="tab-bar-inner">
+      <button class="tab-btn active" id="t-add" onclick="switchTab('add')">
+        <div class="tab-ico-wrap">
+          <span class="tab-ico">Add</span>
+        </div>
+        <span class="tab-lbl">Add</span>
+      </button>
+      <button class="tab-btn" id="t-dash" onclick="switchTab('dash')">
+        <div class="tab-ico-wrap">
+          <span class="tab-ico">Stats</span>
+        </div>
+        <span class="tab-lbl">Dashboard</span>
+      </button>
+    </div>
+  </nav>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+  // ╔═══════════════════════════════════════════╗
+  //   Paste your Apps Script URL here
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzvOCadjtAtPzf14skLJOqEAKbwnbQkdjAlJV84ITmigJxZkm2dGB5rHxtES6G05OYp/exec";
+  // ╚═══════════════════════════════════════════╝
+
+  const CATS   = ["Groceries","Food","Grabfood","Petrol","Car","Bills","Shopping","Entertainment","Misc"];
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const SHORT  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+  // ── Number pad ──
+  let raw = '';
+  function tap(v) {
+    if (v === 'del') { raw = raw.slice(0,-1); }
+    else if (v === '.' && raw.includes('.')) { return; }
+    else if (v === '.' && !raw) { raw = '0.'; }
+    else if (raw.includes('.') && raw.split('.')[1].length >= 2) { return; }
+    else { raw += v; }
+    const el = document.getElementById('amtNum');
+    el.textContent = raw || '0';
+    el.classList.toggle('empty', !raw);
+  }
+
+  // ── Tabs ──
+  function switchTab(t) {
+    ['add','dash'].forEach(x => {
+      document.getElementById('v-'+x).classList.toggle('active', x===t);
+      document.getElementById('t-'+x).classList.toggle('active', x===t);
+    });
+    document.getElementById('main-title').textContent = t === 'dash' ? 'Dashboard' : 'Expense';
+    if (t === 'dash') loadDashboard();
+  }
+
+  // ── Toast ──
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2400);
+  }
+
+  // ── Submit ──
+  async function submitExpense() {
+    if (!raw || parseFloat(raw) === 0) { toast('Enter an amount first'); return; }
+    if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') { toast('Set your Apps Script URL first'); return; }
+    const btn = document.getElementById('addBtn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+    try {
+      await fetch(SCRIPT_URL, {
+        method:'POST', mode:'no-cors',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          who:      document.querySelector('input[name="who"]:checked').value,
+          amount:   parseFloat(raw).toFixed(2),
+          category: document.querySelector('input[name="cat"]:checked').value,
+          date:     document.getElementById('date').value,
+          payment:  document.querySelector('input[name="pay"]:checked').value,
+          note:     document.getElementById('note').value.trim(),
+        })
+      });
+      toast('Saved');
+      raw = '';
+      const el = document.getElementById('amtNum');
+      el.textContent = '0'; el.classList.add('empty');
+      document.getElementById('note').value = '';
+    } catch { toast('Failed — check connection'); }
+    finally { btn.disabled = false; btn.textContent = 'Add Expense'; }
+  }
+
+  // ── Dashboard ──
+  async function loadDashboard() {
+    const el = document.getElementById('dashContent');
+    el.innerHTML = '<div class="dash-load">Loading...</div>';
+    if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+      el.innerHTML = '<div class="err-box">Paste your Apps Script URL in this file to see live data.</div>';
+      return;
+    }
+    try {
+      const res = await fetch(SCRIPT_URL + '?action=getData');
+      renderDashboard(await res.json());
+    } catch {
+      el.innerHTML = '<div class="err-box">Could not load data. Check your Apps Script URL.</div>';
+    }
+  }
+
+  function renderDashboard(data) {
+    const el = document.getElementById('dashContent');
+    const rows = data.rows || [];
+    const now  = new Date();
+    const m = now.getMonth(), y = now.getFullYear();
+
+    const thisMonth  = rows.filter(r => { const d=new Date(r.date); return d.getMonth()===m && d.getFullYear()===y; });
+    const total      = thisMonth.reduce((s,r)=>s+r.amount, 0);
+    const yangTotal  = thisMonth.filter(r=>r.who==='Yang').reduce((s,r)=>s+r.amount, 0);
+    const lieslTotal = thisMonth.filter(r=>r.who==='Liesl').reduce((s,r)=>s+r.amount, 0);
+
+    const catT = {}; CATS.forEach(c=>catT[c]=0);
+    thisMonth.forEach(r=>{ if(r.category in catT) catT[r.category]+=r.amount; });
+    const maxC  = Math.max(...Object.values(catT), 1);
+    const sortC = CATS.filter(c=>catT[c]>0).sort((a,b)=>catT[b]-catT[a]);
+    const recent= [...rows].reverse().slice(0,8);
+    const fmt   = n => 'RM '+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+
+    el.innerHTML = `
+      <p class="dash-month">${MONTHS[m]} ${y}</p>
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-lbl">Total</div><div class="stat-val">${fmt(total)}</div></div>
+        <div class="stat-card"><div class="stat-lbl">Yang</div><div class="stat-val">${fmt(yangTotal)}</div></div>
+        <div class="stat-card"><div class="stat-lbl">Liesl</div><div class="stat-val liesl">${fmt(lieslTotal)}</div></div>
+      </div>
+      ${sortC.length ? `
+      <div class="dash-block">
+        <div class="dash-h2">By Category</div>
+        <div class="dash-panel"><div class="bar-list">
+          ${sortC.map(c=>`
+            <div class="bar-item">
+              <div class="bar-top"><span class="bar-name">${c}</span><span class="bar-amt">${fmt(catT[c])}</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:${Math.round(catT[c]/maxC*100)}%"></div></div>
+            </div>`).join('')}
+        </div></div>
+      </div>` : ''}
+      ${recent.length ? `
+      <div class="dash-block">
+        <div class="dash-h2">Recent</div>
+        <div class="dash-panel"><div class="entry-list">
+          ${recent.map(r=>{
+            const d=new Date(r.date);
+            return `<div class="entry-row">
+              <div class="entry-dot"><div class="entry-dot-inner"></div></div>
+              <div class="entry-body">
+                <div class="entry-cat">${r.category}</div>
+                <div class="entry-sub">${d.getDate()} ${SHORT[d.getMonth()]}${r.note?' · '+r.note:''} · ${r.who}</div>
+              </div>
+              <div class="entry-amt">${fmt(r.amount)}</div>
+            </div>`;
+          }).join('')}
+        </div></div>
+      </div>` : `<div class="dash-empty">Nothing logged this month yet.</div>`}`;
+  }
+</script>
+</body>
+</html>
